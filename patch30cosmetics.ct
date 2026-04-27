@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="45">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>0</ID>
+      <Description>"Cosmetic Script"</Description>
+      <VariableType>Auto Assembler Script</VariableType>
+      <AssemblerScript>
+[ENABLE]
+aobscanmodule(cos, Mordhau-Win64-Shipping.exe, 0F 85 1E 01 00 00 83 7B 08 01 0F 8E)
+registersymbol(cos)
+
+cos:
+  db E9 1F 01 00 00 90
+
+[DISABLE]
+cos:
+  db 0F 85 1E 01 00 00
+
+unregistersymbol(cos)
+</AssemblerScript>
+    </CheatEntry>
+  </CheatEntries>
+  <UserdefinedSymbols/>
+</CheatTable>

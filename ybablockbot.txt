@@ -1,0 +1,985 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService('Players')
+local Workspace = game:GetService('Workspace')
+local UserInputService = game:GetService('UserInputService')
+
+local LocalPlayer = Players.LocalPlayer
+
+local function ping()
+    return LocalPlayer:GetNetworkPing()
+end
+
+local function getCharacter()
+    return LocalPlayer.Character
+end
+
+local function getHRP()
+    local ch = getCharacter()
+    return ch and ch:FindFirstChild('HumanoidRootPart') or nil
+end
+
+local function isTimeStop()
+    return game.Lighting:FindFirstChild('TimeStop') and true or false
+end
+
+local function isRagdolled(ch)
+    if ch then
+        return ch:FindFirstChild('RagdollParts') and true or false
+    end
+    return nil
+end
+
+local function getstand(ch)
+    return ch and ch:FindFirstChild('StandMorph') or nil
+end
+
+local function getstandP(ch)
+    if ch and ch.Parent then
+        local sm = ch:FindFirstChild('StandMorph')
+        if sm then
+            return sm.PrimaryPart or nil
+        end
+    end
+    return nil
+end
+
+local function log(_)
+end
+
+-- Minimal stubs used by some special handlers
+local function isinradius(part, radius)
+    local hrp = getHRP()
+    if not (hrp and part) then
+        return false
+    end
+    return (hrp.Position - part.Position).Magnitude <= radius
+end
+
+local function isinhitbox(_, _)
+    return false
+end
+
+-- Data tables (taken from debilizmsource.lua)
+local blocks_perfect = {
+    {
+        'rbxassetid://7217913060',
+        { def = 0.2 },
+    },
+    'rbxassetid://4725629903',
+    'rbxassetid://6032844827',
+    'rbxassetid://163619849',
+    {
+        'rbxassetid://7217914447',
+        {
+            def = 0,
+            chckfunc = function(anim)
+                local parent = anim.Parent
+                local sm = getstand(parent)
+                if sm then
+                    local sn = sm:FindFirstChild('Stand Name')
+                    return sn and sn.Value == 'Star Platinum' or false
+                end
+                return false
+            end,
+        },
+    },
+    {
+        'rbxassetid://7217914447',
+        {
+            def = 0,
+            chckfunc = function(anim)
+                local parent = anim.Parent
+                local sm = getstand(parent)
+                if sm then
+                    local sn = sm:FindFirstChild('Stand Name')
+                    return sn and sn.Value ~= 'Star Platinum' or false
+                end
+                return false
+            end,
+        },
+    },
+}
+
+local blocks_base = {
+    {
+        'rbxassetid://6032836072',
+        { def = 0.3 },
+    },
+    'rbxassetid://6034138660',
+    {
+        'rbxassetid://10459370874',
+        {
+            def = 0.35,
+            addw = -0.35,
+            dist = 15,
+        },
+    },
+    {
+        'rbxassetid://12440326715',
+        {
+            addw = -0.1,
+            dist = 15,
+        },
+    },
+    {
+        'rbxassetid://74034132845527',
+        { def = 0.4 },
+    },
+}
+
+local blocks_UNBLOCK = {
+    'rbxassetid://11876873350',
+}
+
+local blocksanim_perfect = {
+    {
+        'rbxassetid://6048575522',
+        {
+            def = 0,
+            chckfunc = function(_, anim)
+                local parent = anim.Parent
+                local sm = getstand(parent)
+                if sm then
+                    local sn = sm:FindFirstChild('Stand Name')
+                    return sn and sn.Value == 'Star Platinum' or false
+                end
+                return false
+            end,
+        },
+    },
+    {
+        'rbxassetid://6048575522',
+        {
+            def = 0,
+            chckfunc = function(_, anim)
+                local parent = anim.Parent
+                local sm = getstand(parent)
+                if sm then
+                    local sn = sm:FindFirstChild('Stand Name')
+                    return sn and sn.Value ~= 'Star Platinum' or false
+                end
+                return false
+            end,
+        },
+    },
+    {
+        'rbxassetid://4211804997',
+        {
+            def = 0.3,
+            chckfunc = function(_, anim)
+                local parent = anim.Parent
+                local sm = getstand(parent)
+                if sm then
+                    local sn = sm:FindFirstChild('Stand Name')
+                    return sn and sn.Value ~= 'Tusk ACT 4' or false
+                end
+                return false
+            end,
+        },
+    },
+    {
+        'rbxassetid://13899360363',
+        { def = 0.4 },
+    },
+    {
+        'rbxassetid://7189005773',
+        { def = 0.3 },
+    },
+    {
+        'rbxassetid://6835249882',
+        { def = 0.4 },
+    },
+    {
+        'rbxassetid://11886825775',
+        { def = 0.3 },
+    },
+    {
+        'rbxassetid://4879759800',
+        { def = 0.4 },
+    },
+    {
+        'rbxassetid://4825999731',
+        {
+            def = 0.5,
+            dist = 160,
+            chckfunc = function(_, _)
+                return false
+            end,
+        },
+    },
+    'rbxassetid://6704817082',
+    'rbxassetid://6049426097',
+    {
+        'rbxassetid://6105486059',
+        {},
+    },
+    {
+        'rbxassetid://5303743107',
+        {},
+    },
+    {
+        'rbxassetid://7250792726',
+        { def = 0.4 },
+    },
+    'rbxassetid://4812642386',
+    {
+        'rbxassetid://6216052429',
+        {
+            def = 0.3,
+            chckfunc = function(track)
+                task.wait()
+                return track.Speed > 1.39
+            end,
+        },
+    },
+    {
+        'rbxassetid://6216052429',
+        {},
+    },
+    {
+        'rbxassetid://4096014941',
+        {
+            def = 0.4,
+            chckfunc = function(track)
+                task.wait()
+                return track.Speed > 1.049 and track.Speed < 1.051
+            end,
+        },
+    },
+    {
+        'rbxassetid://4096014941',
+        {
+            def = 0.4,
+            chckfunc = function(track)
+                return track.Speed > 1.074 and track.Speed < 1.076
+            end,
+        },
+    },
+    {
+        'rbxassetid://4096014941',
+        {
+            def = 0.4,
+            chckfunc = function(track, anim)
+                local parent = anim.Parent
+                local sm = getstandP(parent)
+                if sm then
+                    local sn = sm.Parent:FindFirstChild('Stand Name')
+                    if sn and sn.Value == "Magician's Red" then
+                        return track.Speed == 1
+                    end
+                end
+                return false
+            end,
+        },
+    },
+    {
+        'rbxassetid://4096014941',
+        {
+            def = 0.4,
+            chckfunc = function(_, anim)
+                local parent = anim.Parent
+                local sm = getstand(parent)
+                if sm then
+                    local sn = sm:FindFirstChild('Stand Name')
+                    return sn and sn.Value == 'Gold Experience' or false
+                end
+                return false
+            end,
+        },
+    },
+}
+
+local blocksanim_base = {
+    {
+        'rbxassetid://12733018380',
+        {
+            def = 0.35,
+            dist = 15,
+            addw = 1.1,
+        },
+    },
+    {
+        'rbxassetid://12733022476',
+        {
+            coliseum = true,
+            dist = 1000,
+            addw = 0.3,
+        },
+    },
+    {
+        'rbxassetid://4608512208',
+        { addw = 0.25 },
+    },
+    {
+        'rbxassetid://5303988283',
+        { def = 0.2 },
+    },
+    {
+        'rbxassetid://6780938176',
+        {
+            def = 0.2,
+            addw = 0.3,
+        },
+    },
+    'rbxassetid://12292886724',
+}
+
+local blocksanim_UNBLOCK = {
+    'rbxassetid://12293318922',
+    'rbxassetid://13819646949',
+    'rbxassetid://6780937804',
+    'rbxassetid://6780982308',
+    {
+        'rbxassetid://10443019808',
+        { dist = 10 },
+    },
+}
+
+local block_projectiles = {
+    {
+        'VisionPlunderBubble',
+        'Core',
+        15,
+        nil,
+    },
+    {
+        ' SP Bullet',
+        nil,
+        20,
+        function(p)
+            return p:FindFirstChild('Victim') and true or false
+        end,
+        false,
+        true,
+    },
+    {
+        'Last Shot',
+        nil,
+        20,
+        nil,
+        false,
+        true,
+    },
+    {
+        'Main',
+        nil,
+        25,
+        function(p)
+            return p:FindFirstChild('BloodTrail') and true or false
+        end,
+        true,
+    },
+    {
+        'HomingShard',
+        nil,
+        20,
+    },
+    {
+        'Bullet',
+        nil,
+        20,
+        function(p)
+            if p.Name:find('SP Bullet') or p.Name:find('SPBullet') then
+                return false
+            else
+                return not p:FindFirstChild('Victim')
+            end
+        end,
+    },
+    {
+        'CrossFirePiece',
+        nil,
+        40,
+        function(p)
+            local s = p:FindFirstChild('OnFireSparks')
+            if s then
+                return s.Enabled
+            end
+            return false
+        end,
+        true,
+        true,
+    },
+    {
+        'Baseball3',
+        nil,
+        20,
+    },
+}
+
+local block_objects = {
+    {
+        'Wormhole',
+        workspace,
+        7,
+        function()
+            return 0, 0, -(ping() / 2), false
+        end,
+    },
+}
+
+local block_SPECIAL = {
+    {
+        'GroundIndicator',
+        function(p)
+            local cfg = { def = 0, wt = 0, addw = -0.1 }
+            if not isinhitbox then
+                return false
+            end
+            local clone = p:Clone()
+            local extra = 5 * 2
+            clone.Size = Vector3.new(15 + extra, 5, 40 + extra)
+            clone.CFrame = clone.CFrame * CFrame.new(0, 0, -12.5)
+            task.wait(0.15)
+            if isinhitbox(clone, 10) then
+                reqblock(cfg.def, cfg.wt, cfg.addw, false)
+            end
+            return true
+        end,
+    },
+    {
+        'FloorDash',
+        function(p)
+            if not isinradius(p, 40) then
+                return false
+            end
+            local cfg = { def = 0, wt = 0, addw = 0.25 }
+            task.wait(0.2)
+            reqblock(cfg.def, cfg.wt, cfg.addw, false)
+            return true
+        end,
+    },
+}
+
+local overriders = {
+    ['rbxassetid://7217913060'] = {
+        'rbxassetid://4096014941',
+    },
+}
+
+-- Runtime settings
+local blockbot = false
+local reblocking = true
+local keepblock = true
+local projectiles_priority = false
+local unblocking = true
+local coliseumenabled = false
+local lboverriding = true
+
+local F = false
+local blocked = false
+local blockactions = false
+local blockprocsuntil = tick()
+local lastblock = 0
+local lastboi = nil
+local lastbad = ''
+local lastbb = tick()
+local blockedsound = 'rbxassetid://5056859332'
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        F = true
+    elseif input.KeyCode == Enum.KeyCode.RightShift then
+        blockbot = not blockbot
+        warn('[BlockBot] Enabled =', blockbot)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        F = false
+    end
+end)
+
+local function getLiving()
+    return Workspace:WaitForChild('Living')
+end
+
+local function getLocalLiving()
+    local living = getLiving()
+    return living:FindFirstChild(LocalPlayer.Name)
+end
+
+local function getRemoteEvent()
+    local ll = getLocalLiving()
+    return ll and ll:FindFirstChild('RemoteEvent') or nil
+end
+
+local function block()
+    local ll = getLocalLiving()
+    if not ll then return end
+    local cap = ll:FindFirstChild('Blocking_Capacity')
+    local re = ll:FindFirstChild('RemoteEvent')
+    if not (cap and re) then return end
+
+    if cap.Value <= 0 then
+        blocked = true
+        re:FireServer(unpack({
+            'StartBlocking',
+            'pass',
+        }))
+    else
+        log('b r 2')
+    end
+end
+
+local function unblock(force, silent)
+    if force or (not F or (not keepblock or isRagdolled(getCharacter()))) then
+        if force and not (reblocking or isRagdolled(getCharacter())) then
+            return 42
+        end
+
+        local ll = getLocalLiving()
+        local re = ll and ll:FindFirstChild('RemoteEvent')
+        if not re then return end
+
+        local args = {
+            'StopBlocking',
+            'pass',
+        }
+
+        if not (silent or force) or isRagdolled(getCharacter()) then
+            blockactions = false
+        end
+
+        for _ = 1, 5 do
+            re:FireServer(unpack(args))
+        end
+    end
+end
+
+function reqblock(def, wt, addw, allowReblock, prio)
+    if not blockbot then return end
+
+    local myChar = getCharacter()
+    if not myChar then return end
+
+    local ll = getLocalLiving()
+    if not ll then return end
+
+    local cap = ll:FindFirstChild('Blocking_Capacity')
+    local re = ll:FindFirstChild('RemoteEvent')
+    if not (cap and re) then return end
+
+    local priority = prio or 0
+
+    if blockactions then
+        if priority and tonumber(blockactions) then
+            if priority <= tonumber(blockactions) then
+                return
+            end
+        elseif not blockactions then
+            return
+        end
+    end
+
+    blockactions = priority
+
+    -- cancel hold attack
+    local charRe = myChar:FindFirstChild('RemoteEvent')
+    if charRe then
+        charRe:FireServer(unpack({
+            'HoldAttack',
+            {
+                Bool = false,
+                Type = 'm1',
+            },
+        }))
+    end
+
+    lastbb = tick()
+
+    if cap.Value > 0 and allowReblock then
+        if def < 0.2 or not reblocking then
+            return
+        end
+        if unblock(true) == 42 then
+            return
+        end
+    end
+
+    lastblock += 1
+    local cur = lastblock
+
+    task.wait(wt)
+
+    if lboverriding and lastblock ~= cur then
+        return
+    elseif isTimeStop() then
+        return
+    else
+        block()
+
+        local waitTime = 0.4 + math.max(0.1, ping()) + (addw or 0)
+        task.wait(waitTime)
+
+        if lboverriding and lastblock ~= cur then
+            return
+        end
+
+        blockactions = false
+        if unblocking then
+            unblock(false)
+        end
+    end
+end
+
+local function proroc(evtObj, enemyRoot, enemyStandRoot)
+    if isTimeStop() then return end
+    if isRagdolled(getCharacter()) then return end
+    if not blockbot then return end
+    if blockprocsuntil > tick() then return end
+
+    local function tooFar(limit)
+        local hrp = getHRP()
+        if not (hrp and enemyRoot) then
+            return true
+        end
+        if limit < (enemyRoot.Position - hrp.Position).Magnitude then
+            if not enemyStandRoot then
+                return true
+            end
+            if limit < (enemyStandRoot.Position - hrp.Position).Magnitude then
+                return true
+            end
+        end
+        return false
+    end
+
+    -- Sounds (perfect block detect)
+    if typeof(evtObj) == 'Instance' and evtObj:IsA('Sound') then
+        if evtObj.SoundId == blockedsound and lastboi == enemyRoot.Parent then
+            unblock(false)
+            return
+        end
+
+        local best = nil
+        for _, entry in ipairs({ blocks_perfect, blocks_base, blocks_UNBLOCK }) do
+            for _, v in ipairs(entry) do
+                if type(v) == 'string' then
+                    if evtObj.SoundId == v then
+                        best = v
+                        break
+                    end
+                elseif type(v) == 'table' then
+                    if evtObj.SoundId == v[1] then
+                        best = v
+                        break
+                    end
+                end
+            end
+            if best then break end
+        end
+
+        if not best then return end
+
+        -- default
+        local def = 0.3
+        local dist = 25
+        local addw = 0
+        local allowReblock = false
+        local prio = 0
+
+        if type(best) == 'table' then
+            local cfg = best[2] or {}
+            def = cfg.def or def
+            dist = cfg.dist or dist
+            addw = cfg.addw or addw
+            if cfg.chckfunc and not cfg.chckfunc(evtObj) then
+                return
+            end
+        end
+
+        if tooFar(dist) then return end
+
+        lastboi = enemyRoot.Parent
+        lastbad = type(best) == 'table' and best[1] or best
+
+        local extraDelay = 0
+        local wt = math.max(0, def - ping() - extraDelay)
+        reqblock(def, wt, addw, allowReblock, prio)
+        return
+    end
+
+    -- Animations
+    if typeof(evtObj) == 'Instance' and evtObj:IsA('AnimationTrack') then
+        local animId = evtObj.Animation and evtObj.Animation.AnimationId or ''
+        local candidates = { blocksanim_perfect, blocksanim_base, blocksanim_UNBLOCK }
+
+        local hit = nil
+        for _, list in ipairs(candidates) do
+            for _, v in ipairs(list) do
+                if type(v) == 'string' then
+                    if animId == v then
+                        hit = v
+                        break
+                    end
+                elseif type(v) == 'table' then
+                    if animId == v[1] then
+                        hit = v
+                        break
+                    end
+                end
+            end
+            if hit then break end
+        end
+
+        if not hit then return end
+
+        local def = 0.3
+        local dist = 25
+        local addw = 0
+        local allowReblock = false
+        local prio = 0
+
+        if type(hit) == 'table' then
+            local cfg = hit[2] or {}
+            def = cfg.def or def
+            dist = cfg.dist or dist
+            addw = cfg.addw or addw
+            if cfg.coliseum and not coliseumenabled then
+                return
+            end
+            if cfg.chckfunc and not cfg.chckfunc(evtObj, evtObj.Animation) then
+                return
+            end
+        end
+
+        if blockactions and overriders[lastbad] then
+            for _, overrideAnim in ipairs(overriders[lastbad]) do
+                if overrideAnim == animId then
+                    return
+                end
+            end
+        end
+
+        if tooFar(dist) then return end
+
+        lastboi = enemyRoot.Parent
+        lastbad = type(hit) == 'table' and hit[1] or hit
+
+        local wt = math.max(0, def - ping())
+        reqblock(def, wt, addw, allowReblock, prio)
+        return
+    end
+end
+
+local function proc(evtObj, enemyRoot, enemyStandRoot)
+    if blockbot then
+        return proroc(evtObj, enemyRoot, enemyStandRoot)
+    end
+end
+
+local function handleproj(obj)
+    if not blockbot then return end
+
+    local hrp = getHRP()
+    if not hrp then return end
+
+    for _, cfg in ipairs(block_projectiles) do
+        if obj.Name:find(cfg[1]) then
+            local tracked = cfg[2] == nil and obj or obj:FindFirstChild(cfg[2])
+            if not tracked then return end
+
+            local checkOk = cfg[4] and cfg[4](obj) or true
+            if not checkOk then return end
+
+            local maxDist = cfg[3]
+            local ignoreTransparency = cfg[5]
+            local treatAnchoredAsMoving = cfg[6]
+
+            while obj.Parent and obj:IsDescendantOf(workspace) and tracked.Parent and ((tracked.Transparency < 1) or ignoreTransparency) and ((not tracked.Anchored) or treatAnchoredAsMoving) do
+                local d = (hrp.Position - tracked.Position).Magnitude
+                if d < maxDist and (not blockactions or projectiles_priority) then
+                    if blockactions then return end
+
+                    lastblock += 1
+                    local cur = lastblock
+                    blockactions = true
+                    if projectiles_priority then
+                        blockactions = 42000
+                    end
+
+                    block()
+
+                    local start = tick()
+                    while obj.Parent and obj:IsDescendantOf(workspace) and tracked.Parent and (tick() - start < 0.75) do
+                        if cur ~= lastblock and lboverriding then
+                            break
+                        end
+                        if (hrp.Position - tracked.Position).Magnitude >= maxDist then
+                            break
+                        end
+                        task.wait()
+                    end
+
+                    if cur == lastblock and not isTimeStop() then
+                        if unblocking then
+                            unblock(false)
+                        end
+                        blockactions = false
+                    end
+                end
+                task.wait()
+            end
+        end
+    end
+end
+
+local function handleSpecial(obj)
+    if not blockbot then return end
+    for _, cfg in ipairs(block_SPECIAL) do
+        if obj.Name:find(cfg[1]) then
+            cfg[2](obj)
+        end
+    end
+end
+
+local function onWorkspaceChildAdded(obj)
+    if not blockbot then return end
+    if blockprocsuntil <= tick() then
+        task.wait()
+        for _, cfg in ipairs(block_projectiles) do
+            if obj.Name:find(cfg[1]) then
+                return handleproj(obj)
+            end
+        end
+        for _, cfg in ipairs(block_SPECIAL) do
+            if obj.Name:find(cfg[1]) then
+                return handleSpecial(obj)
+            end
+        end
+    end
+end
+
+workspace.ChildAdded:Connect(onWorkspaceChildAdded)
+if workspace:FindFirstChild('IgnoreInstances') then
+    workspace.IgnoreInstances.ChildAdded:Connect(onWorkspaceChildAdded)
+end
+
+-- Hook Living models (players + NPCs)
+local hookz = {}
+
+local function getModelRoot(model)
+    if not model then return nil end
+    return model.PrimaryPart or model:FindFirstChild('HumanoidRootPart') or model:FindFirstChildWhichIsA('BasePart')
+end
+
+local function clearHooksForModel(model)
+    local existing = hookz[model]
+    if existing then
+        for _, c in ipairs(existing) do
+            pcall(function()
+                c:Disconnect()
+            end)
+        end
+        hookz[model] = nil
+    end
+end
+
+local function hookLivingModel(model)
+    if not model then return end
+    if model == getCharacter() then return end
+    if model.Name == LocalPlayer.Name then return end
+    if not model:IsA('Model') then return end
+
+    clearHooksForModel(model)
+    hookz[model] = {}
+
+    local humanoid = model:FindFirstChildWhichIsA('Humanoid')
+    if not humanoid then
+        local t0 = tick()
+        while tick() - t0 < 5 and not humanoid do
+            humanoid = model:FindFirstChildWhichIsA('Humanoid')
+            task.wait(0.25)
+        end
+    end
+    if not humanoid then return end
+
+    local animator = humanoid:FindFirstChildWhichIsA('Animator')
+    if not animator then
+        local t1 = tick()
+        while tick() - t1 < 5 and not animator do
+            animator = humanoid:FindFirstChildWhichIsA('Animator')
+            task.wait(0.25)
+        end
+    end
+    if not animator then return end
+
+    local function hookAnimator(anim)
+        if not anim then return end
+        local conn = anim.AnimationPlayed:Connect(function(track)
+            local root = getModelRoot(model)
+            if root then
+                proc(track, root, getstandP(model) or nil)
+            end
+        end)
+        table.insert(hookz[model], conn)
+    end
+
+    hookAnimator(animator)
+
+    local connDesc = model.DescendantAdded:Connect(function(d)
+        if d:IsA('Model') and d.Name == 'StandMorph' then
+            task.wait(0.1)
+            local anim = d:FindFirstChild('Animator', true)
+            if not anim then
+                local t2 = tick()
+                while tick() - t2 < 3 and not anim do
+                    anim = d:FindFirstChild('Animator', true)
+                    task.wait(0.25)
+                end
+            end
+            if anim then
+                hookAnimator(anim)
+            end
+        end
+
+        if d:IsA('Sound') then
+            local root = getModelRoot(model)
+            if root then
+                proc(d, root, getstandP(model) or nil)
+            end
+        end
+    end)
+    table.insert(hookz[model], connDesc)
+
+    local connRemoved = model.AncestryChanged:Connect(function(_, parent)
+        if parent == nil then
+            clearHooksForModel(model)
+        end
+    end)
+    table.insert(hookz[model], connRemoved)
+end
+
+local living = Workspace:WaitForChild('Living')
+
+for _, model in ipairs(living:GetChildren()) do
+    if model:IsA('Model') and model.Name ~= LocalPlayer.Name then
+        task.spawn(function()
+            hookLivingModel(model)
+        end)
+    end
+end
+
+living.ChildAdded:Connect(function(model)
+    if model:IsA('Model') and model.Name ~= LocalPlayer.Name then
+        task.wait(1)
+        hookLivingModel(model)
+    end
+end)
+
+-- Optional: still hook on PlayerAdded too (in case Living model appears later)
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= LocalPlayer then
+        task.wait(1)
+        local m = living:FindFirstChild(plr.Name)
+        if m then
+            hookLivingModel(m)
+        end
+    end
+end)
+
+warn('[BlockBot] Loaded. Press RightShift to toggle.')

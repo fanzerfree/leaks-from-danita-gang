@@ -1,0 +1,202 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local plotsFolder = Workspace:WaitForChild("Plots")
+
+-- 🔧 НАСТРОЙКИ
+local Settings = {
+    COMMON = true,
+    RARE = true,
+    EPIC = true,
+    LEGENDARY = true,
+    MYTHIC = true,
+    BRAINROT_GOD = true,
+    SECRET = true,
+    OG = true
+}
+
+-- 🎨 ЦВЕТА
+local Colors = {
+    COMMON = Color3.fromRGB(200,200,200),
+    RARE = Color3.fromRGB(0,170,255),
+    EPIC = Color3.fromRGB(170,0,255),
+    LEGENDARY = Color3.fromRGB(255,200,0),
+    MYTHIC = Color3.fromRGB(255,0,0),
+    BRAINROT_GOD = Color3.fromRGB(255,0,255),
+    SECRET = Color3.fromRGB(0,255,0),
+    OG = Color3.fromRGB(255,255,255)
+}
+
+-- 📦 ВСЕ ОБЪЕКТЫ (ПОЛНЫЙ СПИСОК)
+local Objects = {
+
+COMMON = {
+"Noobini Pizzanini","Liliri Lalira","Tim Cheese","Fluriflura","Talpa Di Fero",
+"Homicidio Doloso","Svinina Bombardino","Pipi Kiwi",
+"Noobini Santanini","Raccooni Jandelini","Tartaragno","Pipi Corni"
+},
+
+RARE = {
+"Trippi Troppi","King Von","Gangster Footera","Oi Oi Oi","Bandito Bobritto",
+"Boneca Ambalabu","Cacto Hipopotamo","Ta Ta Ta Ta Sahur","Tric Trac Baraboom",
+"Cupcake Koala","Frogo Elfo","Pipi Avocado","Pinealotto Fruttarino"
+},
+
+EPIC = {
+"Cappuccino Assassino","Lil Wayne","Brr Brr Patapim","Avocadini Antilopini",
+"Trulimero Trulicina","Bambini Crostini","Bananita Dolphinita",
+"Perochello Lemonchello","Brri Brri Bicus Dicus Bombicus",
+"Avocadini Guffo","Salamino Penguino","Wombo Rollo",
+"Bandito Axolito","Malame Amarele","Ti Ti Ti Sahur","Mangolini Parrocini",
+"Frogato Pirato","Doi Doi Do","Penguin Tree","Penguino Cocosino","Mummio Rappitto"
+},
+
+LEGENDARY = {
+"Burbaloni Loliloli","Chimpanzini Bananini","Ballerina Cappuccina","Travis Scott",
+"Chef Crabracadabra","Lionel Cactuseli","Glorbo Fruttodrillo",
+"Quivioli Ameleonni","Blueberrinni Octopusini","Pipi Potato",
+"Strawberrelli Flamingelli","Pandaccini Bananini","Sigma Boy",
+"Tirilikalika Tirilikalako","Clickerino Crabo","Caramello Filtrello",
+"Cocosini Mama","Quackula","Pi Pi Watermelon","Signore Carapace",
+"Chocco Bunny","Puffaball","Sigma Girl","Sealo Regalo","Buho de Fuego"
+},
+
+MYTHIC = {
+"Mythic Lucky Block","Lol Fridge","Frigo Camelo","Banana","Orangutini Ananassini",
+"Rhino Toasterino","Bombardiro Crocodilo","Bombombini Gusini","Cavallo Virtuoso",
+"Gorillo Watermelondrillo","Lerulerulerule","Te Te Te Sahur","Tracoducotulu",
+"Tracoducotulu Delapeladustuz","Watermelon Doggy","Cachorrito Melonito",
+"Toiletto","Toiletto Focaccino","Brutto Gialutto","Weed","Spioniro Golubiro",
+"Zibra Zubra Zibralini","Tigrilini Watermelini","Avocadorilla","Dubstep Boy",
+"Gorillo Subwoofero","Stoppo Luminino","Tob Tobi Tobi","Ganganzelli Trulala",
+"Rhino Helicopterino","Magi Ribbitini","Jingle Jingle Sahur","Los Noobinis",
+"Spongini Quackini","Mateo Fish","Carloo","Elefanto Frigo","Famine",
+"Carrotini Brainini","Centrucci Nuclucci","Jacko Spaventosa",
+"Bananito Bandito","Tree Tree Tree Sahur","Fizzy Soda"
+},
+
+BRAINROT_GOD = {
+"Brainrot God Lucky Block","Cocofanto Elefanto","Girafa Celestre",
+"Tralalero Tralala","Odin Din Din Dun","Tralalita Tralala",
+"Trenostruzzo Turbo 3000","Trippi Troppi Troppa Trippa",
+"Ballerino Lololo","Pakrahmatmamat","Piccione Macchina",
+"Tractoro Dinosauro","Cacasito Satalito","Astronaut","Aquanaut",
+"Tartaruga Cisterna","Antonio","Gattatino Nyanino","Chihuanini Taconini",
+"Matteo","Los Crocodillitos","Tigroligre Frutonni","Money Money Man",
+"Espresso Signora","Tipi Topi Taco","Unclito Samito","Alessio",
+"Tukanno Bananno","Orcalero Orcala","Vampira Cappuccina",
+"Extinct Ballerina","Jacko Jack Jack","Urubini Flamenguini",
+"Capi Taco","Los Chihuaninis","Gattito Tacoto","Las Capuchinas"
+},
+
+SECRET = {
+"Secret Lucky Block","La Vacca Saturno Saturnita","Los Tralaleritos",
+"Las Tralaleritas","Job Job Job Sahur","GOAT","Graipuss Medussi",
+"To to to Sahur","Chicleteira Bicicleteira","La Grande Combinasion",
+"Nuclearo Dinossauro","Money Money Puggy","Tang Tang Keletang",
+"Ketupat Kepat","Tictac Sahur","Capitano Moby","Cerberus","Dragon Cannelloni"
+},
+
+OG = {
+"Skibidi Toilet","Meowl","Strawberry Elephant"
+}
+
+}
+
+print("=== FULL SCAN STARTED ===")
+
+-- 📍 НАЙТИ СВОЙ ПЛОТ
+local closestPlot = nil
+local closestDistance = math.huge
+
+for _, plot in ipairs(plotsFolder:GetChildren()) do
+    local part = plot:FindFirstChildWhichIsA("BasePart")
+    if part then
+        local distance = (part.Position - hrp.Position).Magnitude
+        if distance < closestDistance then
+            closestDistance = distance
+            closestPlot = plot
+        end
+    end
+end
+
+if closestPlot then
+    print("🚫 ТВОЙ ПЛОТ:", closestPlot.Name)
+end
+
+-- ✨ ESP
+local function addESP(obj, color)
+    if obj:FindFirstChild("ESP") then return end
+
+    -- 🌟 Highlight
+    local h = Instance.new("Highlight")
+    h.Name = "ESP"
+    h.FillColor = color
+    h.OutlineColor = color
+    h.FillTransparency = 0.5
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent = obj
+
+    -- 🏷️ Billboard (имя)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP_Name"
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.AlwaysOnTop = true
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+
+    -- пытаемся прикрепить к основной части
+    local adornee = obj:IsA("Model") and obj:FindFirstChildWhichIsA("BasePart") or obj
+    if not adornee then return end
+    billboard.Adornee = adornee
+    billboard.Parent = obj
+
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = obj.Name
+    text.TextColor3 = color
+    text.TextStrokeTransparency = 0
+    text.TextScaled = false
+    text.TextSize = 14 -- можешь менять: 10–20
+    text.Font = Enum.Font.GothamBold
+    text.Parent = billboard
+end
+
+local foundSomething = false
+
+-- 🔍 СКАН
+for _, plot in ipairs(plotsFolder:GetChildren()) do
+    
+    if plot == closestPlot then continue end
+
+    for category, list in pairs(Objects) do
+        if Settings[category] then
+            
+            for _, name in ipairs(list) do
+                local obj = plot:FindFirstChild(name, true)
+                
+                if obj then
+                    foundSomething = true
+                    print("🔥 НАЙДЕН:", name, "|", category)
+
+                    addESP(obj, Colors[category])
+                end
+            end
+
+        end
+    end
+end
+
+-- 🔄 SERVERHOP
+if not foundSomething then
+    warn("❌ НИЧЕГО НЕ НАЙДЕНО → SERVERHOP")
+
+    task.wait()
+
+    local module = loadstring(game:HttpGet("https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))()
+    module:Teleport(game.PlaceId)
+end
